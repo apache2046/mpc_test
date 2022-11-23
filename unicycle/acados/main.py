@@ -11,12 +11,15 @@ from common import pydraw
 
 X0 = np.array([0.0, 0.0, 0.0, 0.0, 0.0])  # Intitalize the states [x,y,v,th,th_d]
 XN = np.array([3.0, 2.0, 0.0, 0.0, 0.0])
+# XN = np.array([0.0, 1.0, 0.0, 0.0, 0.0])
 
-N_horizon = 400  # Define the number of discretization steps
-T_horizon = 4.0  # Define the prediction horizon
+N_horizon = 200  # Define the number of discretization steps
+T_horizon = 2.0  # Define the prediction horizon
 F_max = 10  # Define the max force allowed
-T_max = 1.0 * 4
+T_max = 1.0 * 10
 Theta_max = 1.5
+x_min = 0
+x_max = 100
 
 
 def create_ocp_solver_description() -> AcadosOcp:
@@ -33,9 +36,9 @@ def create_ocp_solver_description() -> AcadosOcp:
     ocp.dims.N = N_horizon
 
     # set cost
-    Q_mat = 1 * np.diag([1e3, 1e3, 1e3, 1e3, 0.0])  # [x, y, x_d, th, th_d]
-    Qe_mat = 200 * np.diag([1e3, 1e3, 1e3, 1e3, 0.0])
-    R_mat = np.diag([1e-1, 1e-2])
+    Q_mat = 1 * np.diag([1e3, 1e3, 0, 1e2, 0.0])  # [x, y, x_d, th, th_d]
+    Qe_mat = 200 * np.diag([1e3, 1e3, 0, 1e3, 0.0])
+    R_mat = 0.01 * np.diag([1e-1, 1e-2])
 
     ocp.cost.cost_type = "LINEAR_LS"
     ocp.cost.cost_type_e = "LINEAR_LS"
@@ -63,9 +66,9 @@ def create_ocp_solver_description() -> AcadosOcp:
     ocp.constraints.ubu = np.array([+F_max, +T_max])
     ocp.constraints.idxbu = np.array([0, 1])
 
-    ocp.constraints.lbx = np.array([-Theta_max])
-    ocp.constraints.ubx = np.array([+Theta_max])
-    ocp.constraints.idxbx = np.array([2])
+    ocp.constraints.lbx = np.array([x_min, -Theta_max])
+    ocp.constraints.ubx = np.array([x_max, +Theta_max])
+    ocp.constraints.idxbx = np.array([0, 2])
 
     ocp.constraints.x0 = X0
 
