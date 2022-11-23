@@ -21,13 +21,13 @@ def export_robot_model() -> AcadosModel:
     u = vertcat(F, T)
 
     # xdot
-    x_dot = SX.sym("x_dot")
-    y_dot = SX.sym("y_dot")
-    v_dot = SX.sym("v_dot")
-    theta_dot = SX.sym("theta_dot")
-    theta_ddot = SX.sym("theta_ddot")
+    # x_dot = SX.sym("x_dot")
+    # y_dot = SX.sym("y_dot")
+    # v_dot = SX.sym("v_dot")
+    # theta_dot = SX.sym("theta_dot")
+    # theta_ddot = SX.sym("theta_ddot")
 
-    xdot = vertcat(x_dot, y_dot, v_dot, theta_dot, theta_ddot)
+    # xdot = vertcat(x_dot, y_dot, v_dot, theta_dot, theta_ddot)
 
     # algebraic variables
     # z = None
@@ -38,14 +38,14 @@ def export_robot_model() -> AcadosModel:
     # dynamics
     f_expl = vertcat(v * cos(theta), v * sin(theta), F, theta_d, T)
 
-    f_impl = xdot - f_expl
+    # f_impl = xdot - f_expl
 
     model = AcadosModel()
 
-    model.f_impl_expr = f_impl
+    # model.f_impl_expr = f_impl
     model.f_expl_expr = f_expl
     model.x = x
-    model.xdot = xdot
+    # model.xdot = xdot
     model.u = u
     # model.z = z
     model.p = p
