@@ -26,7 +26,7 @@ wheel_length *= meter2pixel
 wheel_width *= meter2pixel
 
 lmargin = 100
-def pydraw(X, U, X0, XN, total_steps):
+def pydraw(X, U, X_des):
 
 
     win_width, win_height = 1280, 720
@@ -69,14 +69,6 @@ def pydraw(X, U, X0, XN, total_steps):
         bg_lines.append(shapes.Line(0, (i+1)*32, win_width, (i+1)*32, width=1, color=(180, 180, 180), batch=batch))
     
 
-    # start_point = shapes.Circle(lmargin + X0[0] * meter2pixel, lmargin + X0[1] * meter2pixel, 3, color=(200, 40, 40), batch=batch)
-    # start_point_line = shapes.Line(lmargin + X0[0] * meter2pixel, lmargin + X0[1] * meter2pixel, 
-    #                                lmargin + X0[0] * meter2pixel + 40 * np.cos(X0[2]), lmargin + X0[1] * meter2pixel + 40 * np.sin(X0[2]),
-    #                                1, color=(200, 40, 40), batch=batch)
-    # end_point   = shapes.Circle(lmargin + XN[0] * meter2pixel, lmargin + XN[1] * meter2pixel, 3, color=(200, 40, 40), batch=batch)
-    # end_point_line = shapes.Line(lmargin + XN[0] * meter2pixel, lmargin + XN[1] * meter2pixel, 
-    #                              lmargin + XN[0] * meter2pixel + 40 * np.cos(XN[2]), lmargin + XN[1] * meter2pixel + 40 * np.sin(XN[2]),
-    #                              1, color=(200, 40, 40), batch=batch)
     labelX = pyglet.text.Label('EgoX:',
                             font_name='Times New Roman',
                             font_size=10,
@@ -131,31 +123,27 @@ def pydraw(X, U, X0, XN, total_steps):
         # glClearColor(1, 1, 1, 1)
 
         frame += 1
-        if frame % 6 == 0:
-            idx = (idx + 1) % total_steps
+        if frame % 3 == 0:
+            idx = (idx + 1) % len(U)
             if idx == 0:
                 traj = []
         window.clear()
-        labelX.text = f"EgoX:  {X[idx, 0]:+.2f}"
-        labelY.text = f"EgoY:  {X[idx, 1]:+.2f}"
+        # print(idx)
+        # print(X[idx])
+        labelX.text = f"X:  {X[idx, 0]:+.2f}"
+        labelY.text = f"Y:  {X[idx, 1]:+.2f}"
         labelTheta.text = f"Psi:  {X[idx, 2]:+.2f}"
         labelV.text = f"V:  {X[idx, 3]:+.2f}"
         labelF.text = f"a:  {U[idx, 0]:+.2f}"
         labelT.text = f"delta_dot:  {U[idx, 1]:+.2f}"
         labelStep.text = f"step:  {idx}"
         batch.draw()
-        arrow.x = lmargin + X0[0] * meter2pixel
-        arrow.y = lmargin + X0[1] * meter2pixel
-        arrow.rotation = -X0[2] / np.pi * 180
-        arrow.draw()
-        arrow.x = lmargin + XN[0] * meter2pixel
-        arrow.y = lmargin + XN[1] * meter2pixel
-        arrow.rotation = -XN[2] / np.pi * 180
-        arrow.draw()
-        arrow.x = 200
-        arrow.y = 100
-        arrow.rotation = 0
-        arrow.draw()
+
+        for X_step in X_des:
+            arrow.x = lmargin + X_step[0] * meter2pixel
+            arrow.y = lmargin + X_step[1] * meter2pixel
+            arrow.rotation = -X_step[2] / np.pi * 180
+            arrow.draw()
 
         if len(traj) > 1:
             batch1 = pyglet.graphics.Batch()

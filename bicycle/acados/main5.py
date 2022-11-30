@@ -8,39 +8,11 @@ import pathlib
 sys.path.append(str(pathlib.Path(__file__).parent.parent))
 from common5 import pydraw
 
-X0 = np.array([5, 4.0, 1.55, 0.0, 0.0])  # Intitalize the states [x, y, psi, v, delta]
-# X0 = np.array([10.0, 0.0, 1.0, 0.0, 0.0])  # Intitalize the states [x, y, psi, v, delta]
-# X0 = np.array([10.0, 0.0, 0.5, 0.0, 0.0])  # Intitalize the states [x, y, psi, v, delta]
-# X0 = np.array([20.0, 0.0, 1.5, 0.0, 0.0])  # Intitalize the states [x, y, psi, v, delta]
-# X0 = np.array([0.0, 2.5, 0, 0.0, 0.0])  # Intitalize the states [x, y, psi, v, delta]
-X0 = np.array([5, 4.0, 2.55, 0.0, 0.0])  # Intitalize the states [x, y, psi, v, delta]
-X0 = np.array([5, 18.0, 4.55, 0.0, 0.0])  # Intitalize the states [x, y, psi, v, delta]
-X0 = np.array([5, 11.0, 1.6, 0.0, 0.0])  # Intitalize the states [x, y, psi, v, delta]
-
-X0 = np.array([5, 5.0, 0.7, 0.0, 0.0])  # Intitalize the states [x, y, psi, v, delta]
-X0 = np.array([0, 5.0, 0, 0.0, 0.0])  # Intitalize the states [x, y, psi, v, delta]
-# X0 = np.array([2.5, 4.5, 0, 0.0, 0.0])
-
-#X0 = np.array([3, 4.0, 0.1, 0.0, 0.0])  # Intitalize the states [x, y, psi, v, delta]
-
-# X0 = np.array([10.0, 20, 0.0, 0.0, 0.0])  # Intitalize the states [x, y, psi, v, delta]
-
-# XN = np.array([3.0, 2.0, 0.0, 0.0, 0.0])
-# XN = np.array([30.0, 10.0, 0.0, 0.0, 0.0])
-XN = np.array([2.5, 4.5, 0, 0.0, 0.0])
-XN = np.array([3, 4.4, 0, 0.0, 0.0])
-
-# XN = np.array([0, 4.0, 0, 0.0, 0.0])  # Intitalize the states [x, y, psi, v, delta]
-
-# XN = np.array([0.0, 0, 0.0, 0.0, 0.0])
-
-
-# N_horizon = 120#100  # Define the number of discretization steps
-# T_horizon = 4#4.0  # Define the prediction horizon
 N_horizon = 60#100  # Define the number of discretization steps
 T_horizon = N_horizon / 30#4.0  # Define the prediction horizon
-a_max = 4  # 
-delta_dot_max = 3
+N_maxsim = 600
+a_max = 2  # 
+delta_dot_max = 2
 delta_max = 0.6
 x_min =  -0.2
 x_max = 100
@@ -60,7 +32,7 @@ def create_ocp_solver_description() -> AcadosOcp:
     ocp.dims.N = N_horizon
 
     # set cost
-    Q_mat = 0.1 * np.diag([1, 1, 1, 0, 0.0])  # [x, y, psi, v, delta]
+    Q_mat = 1 * np.diag([1, 1, 1, 0, 0.0])  # [x, y, psi, v, delta]
     Qe_mat = 1 * np.diag([1e3, 1e3, 1e3, 1e0, 0])
     R_mat = 0 * np.diag([1e-1, 1e-2])
 
@@ -113,7 +85,13 @@ def create_ocp_solver_description() -> AcadosOcp:
 def reset_mpc(acados_ocp_solver):
     acados_ocp_solver.load_iterate(filename='aaa')
 
-def closed_loop_simulation():
+
+acados_ocp_solver:AcadosOcpSolver = None
+acados_integrator:AcadosSimSolver = None
+
+def init_solver():
+    global acados_ocp_solver
+    global acados_integrator
 
     # create solvers
     ocp = create_ocp_solver_description()
@@ -128,27 +106,30 @@ def closed_loop_simulation():
     )
 
     # prepare simulation
-    Nsim = 600
     nx = ocp.model.x.size()[0]
     nu = ocp.model.u.size()[0]
 
-    simX = np.ndarray((Nsim + 1, nx))
-    simU = np.ndarray((Nsim, nu))
-
-    xcurrent = X0
-    simX[0, :] = xcurrent
-
     # initialize solver
     for stage in range(N_horizon + 1):
-        acados_ocp_solver.set(stage, "x", 0.0 * np.ones(xcurrent.shape))
+        acados_ocp_solver.set(stage, "x", np.zeros((nx,)))
     for stage in range(N_horizon):
         acados_ocp_solver.set(stage, "u", np.zeros((nu,)))
 
     acados_ocp_solver.store_iterate(filename='aaa', overwrite=True)
 
+def solve_sim(xStart, xEnd):
     # closed loop
+    global acados_ocp_solver
     total_steps = 0
-    for i in range(Nsim):
+    # print(acados_ocp_solver.get(0, "x"), type(acados_ocp_solver.get(0, "x")), acados_ocp_solver.get(0, "x").sh)
+    nx = acados_ocp_solver.get(0, "x").size
+    nu = acados_ocp_solver.get(0, "u").size
+
+    simX = np.ndarray((N_maxsim + 1, nx))
+    simU = np.ndarray((N_maxsim, nu))
+
+    xcurrent = xStart
+    for i in range(N_maxsim):
 
         # set initial state constraint
         acados_ocp_solver.set(0, "lbx", xcurrent)
@@ -156,9 +137,9 @@ def closed_loop_simulation():
 
         # update yref
         for j in range(N_horizon):
-            yref = np.concatenate([XN, [0,0]])
+            yref = np.concatenate([xEnd, [0, 0]])
             acados_ocp_solver.set(j, "yref", yref)
-        yref_N = XN
+        yref_N = xEnd
         acados_ocp_solver.set(N_horizon, "yref", yref_N)
 
         # solve ocp
@@ -166,15 +147,6 @@ def closed_loop_simulation():
 
         if status not in [0, 2]:
             acados_ocp_solver.print_statistics()
-            # plot_robot(
-            #     np.linspace(0, T_horizon / N_horizon * i, i + 1),
-            #     F_max,
-            #     simU[:i, :],
-            #     simX[: i + 1, :],
-            # )
-            # raise Exception(
-            #     f"acados1 acados_ocp_solver returned status {status} in closed loop instance {i} with {xcurrent}"
-            # )
             print(
                 f"acados1 acados_ocp_solver returned status {status} in closed loop instance {i} with {xcurrent}"
             )
@@ -205,17 +177,34 @@ def closed_loop_simulation():
 
         total_steps += 1
 
-        if np.linalg.norm(xcurrent - XN) < 0.1:
+        error = xcurrent - XN
+        error[2] *= 10
+        if np.linalg.norm(error) < 0.6:
             break
+    return simX[1:total_steps+1], simU[:total_steps]
 
-    # plot results
-    # plot_robot(
-    #     np.linspace(0, T_horizon / N_horizon * Nsim, Nsim + 1), [F_max, None], simU, simX
-    # )
 
-    #print(simX)
-    pydraw(simX, simU, X0, XN, total_steps)
+X0 = np.array([0.0, 5.0, 0, 0.0, 0.0])  # Intitalize the states [x, y, psi, v, delta]
+XNs = [ np.array([2.5, 4.5, 0.0, 0.0, 0.0]), \
+        np.array([0.0, 4.0, 0.0, 0.0, 0.0]), \
+        np.array([2.5, 3.5, 0.0, 0.0, 0.0]), \
+        np.array([0.0, 3.0, 0.0, 0.0, 0.0]), \
+      ]
 
 if __name__ == "__main__":
-    closed_loop_simulation()
+    # closed_loop_simulation()
+    init_solver()
+    simx = [X0]
+    simu = []
+    for XN in XNs:
+        x, u = solve_sim(simx[-1], XN)
+        simx.extend(x)
+        simu.extend(u)
+
+    simx = np.array(simx)
+    simu = np.array(simu)
+    
+    pydraw(simx, simu, [X0, *XNs])
+
+
 
