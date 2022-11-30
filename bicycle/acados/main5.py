@@ -8,10 +8,10 @@ import pathlib
 sys.path.append(str(pathlib.Path(__file__).parent.parent))
 from common5 import pydraw
 
-N_horizon = 60#100  # Define the number of discretization steps
-T_horizon = N_horizon / 30#4.0  # Define the prediction horizon
+N_horizon = 120#100  # Define the number of discretization steps
+T_horizon = N_horizon / 60#4.0  # Define the prediction horizon
 N_maxsim = 600
-a_max = 2  # 
+a_max = 3  # 
 delta_dot_max = 2
 delta_max = 0.6
 x_min =  -0.2
@@ -32,7 +32,7 @@ def create_ocp_solver_description() -> AcadosOcp:
     ocp.dims.N = N_horizon
 
     # set cost
-    Q_mat = 1 * np.diag([1, 1, 1, 0, 0.0])  # [x, y, psi, v, delta]
+    Q_mat = 0.01 * np.diag([1, 1, 1, 0, 0.0])  # [x, y, psi, v, delta]
     Qe_mat = 1 * np.diag([1e3, 1e3, 1e3, 1e0, 0])
     R_mat = 0 * np.diag([1e-1, 1e-2])
 
@@ -179,16 +179,26 @@ def solve_sim(xStart, xEnd):
 
         error = xcurrent - XN
         error[2] *= 10
-        if np.linalg.norm(error) < 0.6:
+        error[3:] = 0 
+        if np.linalg.norm(error) < 0.5:
             break
     return simX[1:total_steps+1], simU[:total_steps]
 
 
-X0 = np.array([0.0, 5.0, 0, 0.0, 0.0])  # Intitalize the states [x, y, psi, v, delta]
-XNs = [ np.array([2.5, 4.5, 0.0, 0.0, 0.0]), \
-        np.array([0.0, 4.0, 0.0, 0.0, 0.0]), \
-        np.array([2.5, 3.5, 0.0, 0.0, 0.0]), \
-        np.array([0.0, 3.0, 0.0, 0.0, 0.0]), \
+X0 = np.array([33.0, 13.0, 0, 0.0, 0.0])  # Intitalize the states [x, y, psi, v, delta]
+# X0 = np.array([19.2, 1.5, np.pi / 2, 0.0, 0.0])
+XNs = [ np.array([18.5, 12.0, 1, 0.0, 0.0]),
+        np.array([16.8, 1.5, np.pi / 2, 0.0, 0.0]),
+        np.array([17.4, 5, np.pi / 2, 0.0, 0.0]),
+        np.array([18.0, 1.5, np.pi / 2, 0.0, 0.0]),
+        np.array([18.6, 5, np.pi / 2, 0.0, 0.0]),
+# XNs = [
+        np.array([19.2, 1.5, np.pi / 2, 0.0, 0.0]),
+        np.array([17.5, 5.3, 1.8, 0.0, 0.0]),
+        np.array([16.8, 9.5, np.pi / 2, 0.0, 0.0]),
+        np.array([4, 13, np.pi, 0.0, 0.0]),
+        np.array([17.7, 12, 2.14, 0.0, 0.0]),
+        np.array([19.2, 1.5, np.pi / 2, 0.0, 0.0]),
       ]
 
 if __name__ == "__main__":

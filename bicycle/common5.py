@@ -7,14 +7,19 @@ wheel_base = 2.8
 car_length = 4.6
 car_width = 1.8
 
-lf = 1.5
-lr = 1.5
+park_width = car_width + 0.6
+park_length = 2 * car_length + 0.5
+road_width = 1.5 * car_length
+bot = 2
+
+lf = 1.4
+lr = 1.4
 wheel_y = 0.8
 wheel_length = 0.7
 wheel_width = 0.23
 
 
-meter2pixel = 20
+meter2pixel = 30
 
 wheel_base *= meter2pixel
 car_length *= meter2pixel
@@ -28,7 +33,7 @@ wheel_width *= meter2pixel
 lmargin = 100
 def pydraw(X, U, X_des):
 
-
+    # print("FPS: ", pyglet.clock.get_frequency())
     win_width, win_height = 1280, 720
     window = pyglet.window.Window(win_width, win_height, resizable=True)
 
@@ -63,11 +68,45 @@ def pydraw(X, U, X_des):
 
     bg_color = shapes.Rectangle(0, 0, win_width, win_height, color=(255, 255, 255), batch=batch)
     bg_lines = []
-    for i in list(range(win_width//32)):
-        bg_lines.append(shapes.Line((i+1)*32, 0, (i+1)*32, win_height, width=1, color=(180, 180, 180), batch=batch))
-    for i in list(range(win_height//32)):
-        bg_lines.append(shapes.Line(0, (i+1)*32, win_width, (i+1)*32, width=1, color=(180, 180, 180), batch=batch))
+    grid_size = 64
+    for i in list(range(win_width//grid_size)):
+        bg_lines.append(shapes.Line((i+1)*grid_size, 0, (i+1)*grid_size, win_height, width=1, color=(180, 180, 180), batch=batch))
+    for i in list(range(win_height//grid_size)):
+        bg_lines.append(shapes.Line(0, (i+1)*grid_size, win_width, (i+1)*grid_size, width=1, color=(180, 180, 180), batch=batch))
     
+    bg_lines.append(shapes.Line(win_width//2 - park_width * meter2pixel, bot * meter2pixel, \
+                                win_width//2 + park_width * meter2pixel, bot * meter2pixel, \
+                                width=2, color=(20, 20, 20), batch=batch))
+    bg_lines.append(shapes.Line(win_width//2 - park_width * meter2pixel, bot * meter2pixel, \
+                                win_width//2 - park_width * meter2pixel, (bot + park_length) * meter2pixel, \
+                                width=2, color=(20, 20, 20), batch=batch))
+    bg_lines.append(shapes.Line(win_width//2, bot * meter2pixel, \
+                                win_width//2, (bot + park_length) * meter2pixel, \
+                                width=1, color=(100, 100, 100), batch=batch))
+    bg_lines.append(shapes.Line(win_width//2 + park_width * meter2pixel, bot * meter2pixel, \
+                                win_width//2 + park_width * meter2pixel, (bot + park_length) * meter2pixel, \
+                                width=2, color=(20, 20, 20), batch=batch))
+    bg_lines.append(shapes.Line(0, (bot + park_length) * meter2pixel, \
+                                win_width//2 - park_width * meter2pixel, (bot + park_length) * meter2pixel, \
+                                width=2, color=(20, 20, 20), batch=batch))
+    bg_lines.append(shapes.Line(win_width//2 + park_width * meter2pixel, (bot + park_length) * meter2pixel, \
+                                win_width, (bot + park_length) * meter2pixel, \
+                                width=2, color=(20, 20, 20), batch=batch))
+    bg_lines.append(shapes.Line(0, (bot + park_length + road_width) * meter2pixel, \
+                                win_width, (bot + park_length + road_width) * meter2pixel, \
+                                width=2, color=(20, 20, 20), batch=batch))
+    bg_lines.append(shapes.Circle(win_width // 2 - park_width * meter2pixel, (bot + park_length) * meter2pixel,\
+                                  4, color=(255, 0, 0), batch=batch))
+    bg_lines.append(shapes.Circle(win_width // 2 + park_width * meter2pixel, (bot + park_length) * meter2pixel,\
+                                  4, color=(255, 0, 0), batch=batch))
+    bg_lines.append(shapes.Circle(win_width // 2, (bot + park_length) * meter2pixel,\
+                                  4, color=(255, 0, 0), batch=batch))
+    bg_lines.append(shapes.Circle(win_width // 2 - park_width * meter2pixel, bot * meter2pixel,\
+                                  4, color=(255, 0, 0), batch=batch))
+    bg_lines.append(shapes.Circle(win_width // 2 + park_width * meter2pixel, bot * meter2pixel,\
+                                  4, color=(255, 0, 0), batch=batch))
+    bg_lines.append(shapes.Circle(win_width // 2, bot * meter2pixel,\
+                                  4, color=(255, 0, 0), batch=batch))                                 
 
     labelX = pyglet.text.Label('EgoX:',
                             font_name='Times New Roman',
@@ -114,6 +153,7 @@ def pydraw(X, U, X_des):
     idx = 0
     frame = 0
     traj = []
+    batch1 = pyglet.graphics.Batch()
     @window.event
     def on_draw():
         nonlocal idx
@@ -123,7 +163,7 @@ def pydraw(X, U, X_des):
         # glClearColor(1, 1, 1, 1)
 
         frame += 1
-        if frame % 3 == 0:
+        if frame % 2 == 0:
             idx = (idx + 1) % len(U)
             if idx == 0:
                 traj = []
@@ -145,12 +185,12 @@ def pydraw(X, U, X_des):
             arrow.rotation = -X_step[2] / np.pi * 180
             arrow.draw()
 
-        if len(traj) > 1:
-            batch1 = pyglet.graphics.Batch()
-            tmp = []
-            for x,y in traj:
-                tmp.append(shapes.Circle(x, y, 1, color=(80, 180, 0), batch=batch1))
-            batch1.draw()
+        # if len(traj) > 1:
+        #     batch1 = pyglet.graphics.Batch()
+        #     tmp = []
+        #     for x,y in traj:
+        #         tmp.append(shapes.Circle(x, y, 1, color=(80, 180, 0), batch=batch1))
+        batch1.draw()
                 
 
         gc_x = X[idx, 0] * meter2pixel
@@ -193,8 +233,10 @@ def pydraw(X, U, X_des):
         car.draw()
         car_center = shapes.Circle(lmargin + gc_x, lmargin + gc_y, 2, color=(255, 0, 0))
         car_center.draw()
-        if len(traj) == 0 or traj[-1] != (car.x, car.y):
-            traj.append((car.x, car.y))
+        if len(traj) == 0 or traj[-1][:2] != (car.x, car.y):
+            traj.append((car.x, car.y, shapes.Circle(car.x, car.y, 1, color=(80, 180, 0), batch=batch1)))
+            # tmp.append(
+        pyglet.image.get_buffer_manager().get_color_buffer().save(f'imgs/screenshot{idx:04}.png')
         
 
     @window.event
