@@ -9,7 +9,7 @@ def export_robot_model() -> AcadosModel:
     lr = 1.4
     lf = 1.4
 
-    # set up states & controls
+    # states
     x = SX.sym("x")
     y = SX.sym("y")
     psi = SX.sym("psi")
@@ -18,7 +18,7 @@ def export_robot_model() -> AcadosModel:
 
     x = vertcat(x, y, psi, v, delta)
 
-    # control
+    # controls
     a = SX.sym("a")
     delta_dot = SX.sym("delta_dot")
     u = vertcat(a, delta_dot)
@@ -29,10 +29,10 @@ def export_robot_model() -> AcadosModel:
     # dynamics
     beta = atan(tan(delta) * lr / (lr + lf))
     f_expl = vertcat(
-        v * cos(psi + atan(tan(delta) * lr / (lr + lf))),
-        v * sin(psi + atan(tan(delta) * lr / (lr + lf))),
-        v / lr * sin(atan(tan(delta) * lr / (lr + lf))),
-        a - 0.02 * v,
+        v * cos(psi + beta),
+        v * sin(psi + beta),
+        v / lr * sin(beta),
+        a,
         delta_dot,
     )
 

@@ -8,8 +8,8 @@ import pathlib
 sys.path.append(str(pathlib.Path(__file__).parent.parent))
 from common5 import pydraw
 
-N_horizon = 120#100  # Define the number of discretization steps
-T_horizon = N_horizon / 60#4.0  # Define the prediction horizon
+N_horizon = 60#100  # Define the number of discretization steps
+T_horizon = N_horizon / 30#4.0  # Define the prediction horizon
 N_maxsim = 600
 a_max = 3  # 
 delta_dot_max = 2
@@ -187,7 +187,7 @@ def solve_sim(xStart, xEnd):
 
 X0 = np.array([33.0, 13.0, 0, 0.0, 0.0])  # Intitalize the states [x, y, psi, v, delta]
 # X0 = np.array([19.2, 1.5, np.pi / 2, 0.0, 0.0])
-XNs = [ np.array([18.5, 12.0, 1, 0.0, 0.0]),
+XNs = [ np.array([18.2, 12.0, 1, 0.0, 0.0]),
         np.array([16.8, 1.5, np.pi / 2, 0.0, 0.0]),
         np.array([17.4, 5, np.pi / 2, 0.0, 0.0]),
         np.array([18.0, 1.5, np.pi / 2, 0.0, 0.0]),
@@ -206,15 +206,18 @@ if __name__ == "__main__":
     init_solver()
     simx = [X0]
     simu = []
-    for XN in XNs:
+    arrow_idx = []
+    for idx, XN in enumerate(XNs):
         x, u = solve_sim(simx[-1], XN)
         simx.extend(x)
         simu.extend(u)
+        tmp = [idx] * len(x)
+        arrow_idx.extend(tmp)
 
     simx = np.array(simx)
     simu = np.array(simu)
     
-    pydraw(simx, simu, [X0, *XNs])
+    pydraw(simx, simu, [X0, *XNs], arrow_idx)
 
 
 

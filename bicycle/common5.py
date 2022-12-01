@@ -2,6 +2,8 @@ import pyglet
 from pyglet import shapes
 import numpy as np
 from pyglet.gl import *
+import sys
+from collections import deque
 
 wheel_base = 2.8
 car_length = 4.6
@@ -31,7 +33,7 @@ wheel_length *= meter2pixel
 wheel_width *= meter2pixel
 
 lmargin = 100
-def pydraw(X, U, X_des):
+def pydraw(X, U, X_des, arrow_idx=None):
 
     # print("FPS: ", pyglet.clock.get_frequency())
     win_width, win_height = 1280, 720
@@ -152,7 +154,8 @@ def pydraw(X, U, X_des):
                             x=400, y=60, batch=batch)
     idx = 0
     frame = 0
-    traj = []
+    # traj = []
+    traj=deque(maxlen=50)
     batch1 = pyglet.graphics.Batch()
     @window.event
     def on_draw():
@@ -166,6 +169,7 @@ def pydraw(X, U, X_des):
         if frame % 2 == 0:
             idx = (idx + 1) % len(U)
             if idx == 0:
+                sys.exit()
                 traj = []
         window.clear()
         # print(idx)
@@ -179,11 +183,19 @@ def pydraw(X, U, X_des):
         labelStep.text = f"step:  {idx}"
         batch.draw()
 
-        for X_step in X_des:
-            arrow.x = lmargin + X_step[0] * meter2pixel
-            arrow.y = lmargin + X_step[1] * meter2pixel
-            arrow.rotation = -X_step[2] / np.pi * 180
-            arrow.draw()
+        if arrow_idx is None:
+            for X_step in X_des:
+                arrow.x = lmargin + X_step[0] * meter2pixel
+                arrow.y = lmargin + X_step[1] * meter2pixel
+                arrow.rotation = -X_step[2] / np.pi * 180
+                arrow.draw()
+        else:
+            for arrow_id in [arrow_idx[idx], arrow_idx[idx] + 1]:
+                if arrow_id < len(X_des):
+                    arrow.x = lmargin + X_des[arrow_id][0] * meter2pixel
+                    arrow.y = lmargin + X_des[arrow_id][1] * meter2pixel
+                    arrow.rotation = -X_des[arrow_id][2] / np.pi * 180
+                    arrow.draw()
 
         # if len(traj) > 1:
         #     batch1 = pyglet.graphics.Batch()
@@ -233,8 +245,9 @@ def pydraw(X, U, X_des):
         car.draw()
         car_center = shapes.Circle(lmargin + gc_x, lmargin + gc_y, 2, color=(255, 0, 0))
         car_center.draw()
-        if len(traj) == 0 or traj[-1][:2] != (car.x, car.y):
+        if idx % 2 ==0 and (len(traj) == 0 or traj[-1][:2] != (car.x, car.y)):
             traj.append((car.x, car.y, shapes.Circle(car.x, car.y, 1, color=(80, 180, 0), batch=batch1)))
+            # traj.append((car.x, car.y, shapes.Line(car.x, car.y, car.x, car.y, width=1, color=(80, 180, 0), batch=batch1)))
             # tmp.append(
         pyglet.image.get_buffer_manager().get_color_buffer().save(f'imgs/screenshot{idx:04}.png')
         
