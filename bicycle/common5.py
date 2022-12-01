@@ -249,7 +249,7 @@ def pydraw(X, U, X_des, arrow_idx=None):
             traj.append((car.x, car.y, shapes.Circle(car.x, car.y, 1, color=(80, 180, 0), batch=batch1)))
             # traj.append((car.x, car.y, shapes.Line(car.x, car.y, car.x, car.y, width=1, color=(80, 180, 0), batch=batch1)))
             # tmp.append(
-        pyglet.image.get_buffer_manager().get_color_buffer().save(f'imgs/screenshot{idx:04}.png')
+        # pyglet.image.get_buffer_manager().get_color_buffer().save(f'imgs/screenshot{idx:04}.png')
         
 
     @window.event

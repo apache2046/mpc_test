@@ -117,7 +117,7 @@ def init_solver():
 
     acados_ocp_solver.store_iterate(filename='aaa', overwrite=True)
 
-def solve_sim(xStart, xEnd):
+def solve_sim(xStart, xEnd, final_error_threshold=0.5):
     # closed loop
     global acados_ocp_solver
     total_steps = 0
@@ -179,8 +179,9 @@ def solve_sim(xStart, xEnd):
 
         error = xcurrent - XN
         error[2] *= 10
-        error[3:] = 0 
-        if np.linalg.norm(error) < 0.5:
+        if final_error_threshold > 0.1:
+            error[3:] = 0
+        if np.linalg.norm(error) < final_error_threshold:
             break
     return simX[1:total_steps+1], simU[:total_steps]
 
@@ -208,7 +209,11 @@ if __name__ == "__main__":
     simu = []
     arrow_idx = []
     for idx, XN in enumerate(XNs):
-        x, u = solve_sim(simx[-1], XN)
+        if idx == len(XNs) - 1:
+            final_error_threshold = 0.1
+        else:
+            final_error_threshold = 0.5
+        x, u = solve_sim(simx[-1], XN, final_error_threshold)
         simx.extend(x)
         simu.extend(u)
         tmp = [idx] * len(x)
